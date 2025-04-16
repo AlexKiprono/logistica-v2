@@ -193,18 +193,28 @@ def delete_company_by_id(id):
 def create_county():
     data = request.get_json()
 
-    if 'name' not in data:
-        return jsonify({"message": "Name is required"}), 400
+    if not isinstance(data, list):
+        return jsonify({"message": "Expected a list of counties"}), 400
 
-    county = County(name=data['name'])
-    
-    db.session.add(county)
+    created_counties = []
+
+    for item in data:
+        if 'name' not in item or not item['name']:
+            return jsonify({"message": "Each county must have a 'name'"}), 400
+
+        county = County(name=item['name'])
+        db.session.add(county)
+        created_counties.append(county)
+
     db.session.commit()
 
-    return jsonify({
-        "id": county.id,
-        "name": county.name
-    }), 201
+    return jsonify([
+        {
+            "id": county.id,
+            "name": county.name
+        } for county in created_counties
+    ]), 201
+
 
 # get county
 @superadmin_bp.route('/county', methods=['GET'])
