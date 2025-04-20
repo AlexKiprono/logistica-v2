@@ -149,7 +149,6 @@ def delete_route(id):
         return jsonify({'message': f'Error: {str(e)}'}), 500
 
 
-# view routes by company
 @company_bp.route('/company/routes', methods=['GET'])
 @jwt_required()
 def view_routes():
@@ -162,56 +161,26 @@ def view_routes():
     if not current_user.company:
         return jsonify({'message': 'No Company associated with this admin'}), 400
     
-    company = current_user.company[0]
+    company = current_user.company_id
 
-    routes = Route.query.filter_by(company_id=company.id).all()
-    
+    # Get all routes for the company
+    routes = Route.query.filter_by(company_id=company).all()
+
+    # Prepare the response
     routes_data = []
     for route in routes:
         routes_data.append({
             'id': route.id,
             'departure_id': route.departure_id,
+            'departure_county_name': route.departure_county.name,  # assuming County model has 'name'
             'arrival_id': route.arrival_id,
+            'arrival_county_name': route.arrival_county.name,  # assuming County model has 'name'
             'distance': route.distance,
             'created_at': route.created_at,
             'updated_at': route.updated_at
         })
     
     return jsonify({'routes': routes_data}), 200
-
-
-# @company_bp.route('/company/routes', methods=['GET'])
-# @jwt_required()
-# def view_routes():
-#     current_user_id = get_jwt_identity()
-#     current_user = User.query.get(current_user_id)
-
-#     if not current_user or current_user.role != 'companyadmin':
-#         return jsonify({'message': 'Permission denied'}), 403
-
-#     if not current_user.company:
-#         return jsonify({'message': 'No Company associated with this admin'}), 400
-    
-#     company = current_user.company_id
-
-#     # Get all routes for the company
-#     routes = Route.query.filter_by(company_id=company).all()
-
-#     # Prepare the response
-#     routes_data = []
-#     for route in routes:
-#         routes_data.append({
-#             'id': route.id,
-#             'departure_id': route.departure_id,
-#             'departure_county_name': route.departure_county.name,  # assuming County model has 'name'
-#             'arrival_id': route.arrival_id,
-#             'arrival_county_name': route.arrival_county.name,  # assuming County model has 'name'
-#             'distance': route.distance,
-#             'created_at': route.created_at,
-#             'updated_at': route.updated_at
-#         })
-    
-#     return jsonify({'routes': routes_data}), 200
 
 
 
