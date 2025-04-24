@@ -225,3 +225,19 @@ def get_counties():
         return jsonify(counties_data), 200
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
+
+@superadmin_bp.route('/county/<int:id>', methods=['GET'])
+def get_county_by_id(id):
+    try:
+        county = County.query.get(id)
+        if not county:
+            return jsonify({'message': 'County not found'}), 404
+
+        return jsonify({
+            'id': county.id,
+            'name': county.name,
+            'lat': county.lat,
+            'lng': county.lng
+        }), 200
+    except Exception as e:
+        return jsonify({'message': 'An error occurred', 'error': str(e)}), 500

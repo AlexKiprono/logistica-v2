@@ -1,8 +1,8 @@
-"""empty message
+"""initial
 
-Revision ID: f664d5a68dbb
+Revision ID: 016adf2285e5
 Revises: 
-Create Date: 2025-04-16 01:37:59.227417
+Create Date: 2025-04-23 12:48:09.995348
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f664d5a68dbb'
+revision = '016adf2285e5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -152,6 +152,7 @@ def upgrade():
     )
     op.create_table('parcel',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('tracking_code', sa.String(length=100), nullable=True),
     sa.Column('company_id', sa.Integer(), nullable=True),
     sa.Column('sender_id', sa.Integer(), nullable=True),
     sa.Column('pickup_station_id', sa.Integer(), nullable=False),
@@ -161,6 +162,8 @@ def upgrade():
     sa.Column('receiver_phone', sa.String(length=15), nullable=False),
     sa.Column('weight', sa.Float(), nullable=False),
     sa.Column('delivery_fee', sa.Float(), nullable=False),
+    sa.Column('is_published', sa.Boolean(), nullable=True),
+    sa.Column('is_delivered', sa.Boolean(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=True),
     sa.Column('payment_status', sa.String(length=50), nullable=True),
     sa.Column('payment_amount', sa.Float(), nullable=False),
@@ -170,7 +173,8 @@ def upgrade():
     sa.ForeignKeyConstraint(['dropoff_station_id'], ['station.id'], ),
     sa.ForeignKeyConstraint(['pickup_station_id'], ['station.id'], ),
     sa.ForeignKeyConstraint(['sender_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('tracking_code')
     )
     op.create_table('route_station',
     sa.Column('route_id', sa.Integer(), nullable=True),

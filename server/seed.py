@@ -1,25 +1,14 @@
+from flask.cli import with_appcontext
+from server.models.county import County
+from server.extensions import db
+from server.app import create_app  # Import create_app from app.py in same directory
 
-import os
+app = create_app()
 
-class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
-    
-    # Get the path to the 'server' directory
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    
-    # Construct the path to the database file
-    DB_PATH = os.path.join(BASE_DIR, 'instance', 'transport.db')
-    
-    # Ensure the 'instance' directory exists
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{DB_PATH}'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret'
-    
-    COUNTY = (
-[
-  {"id": "1", "name": "Mombasa", "lat": -4.0435, "lng": 39.6682},
+@app.cli.command("seed-counties")
+@with_appcontext
+def seed_counties():
+    counties = [  {"id": "1", "name": "Mombasa", "lat": -4.0435, "lng": 39.6682},
   {"id": "2", "name": "Kwale", "lat": -4.1737, "lng": 39.4521},
   {"id": "3", "name": "Kilifi", "lat": -3.6305, "lng": 39.8499},
   {"id": "4", "name": "Tana River", "lat": -2.2717, "lng": 40.3089},
@@ -66,5 +55,12 @@ class Config:
   {"id": "45", "name": "Kisii", "lat": -0.6773, "lng": 34.7796},
   {"id": "46", "name": "Nyamira", "lat": -0.5633, "lng": 34.9359},
   {"id": "47", "name": "Nairobi", "lat": -1.2833, "lng": 36.8167}
-]
-    )
+    ]
+
+    for county_data in counties:
+        existing = County.query.get(county_data["id"])
+        if not existing:
+            db.session.add(County(**county_data))  # Unpack dict into County model
+
+    db.session.commit()
+    print("Counties seeded successfully.")

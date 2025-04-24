@@ -1,17 +1,12 @@
-import re
-from datetime import datetime, timedelta
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from sqlalchemy.orm import validates
-from datetime import time
-from sqlalchemy import Time
-from server import db,bcrypt
+from server import db
 
 class County(db.Model):
     __tablename__ = 'county'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique=True, nullable=False)
+    lat = db.Column(db.Float, nullable=False)
+    lng = db.Column(db.Float, nullable=False)
 
     stations = db.relationship('Station', back_populates='county')
         # Relationships

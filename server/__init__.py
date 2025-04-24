@@ -48,11 +48,16 @@ def create_app(config_class=Config):
     from server.routes.superadmin import superadmin_bp
     from server.routes.company import company_bp
     from server.routes.passenger import passenger_bp
+    from server.routes.parcels import parcel_bp
+    from server.routes.station import station_bp
 
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(superadmin_bp)
     app.register_blueprint(company_bp)
     app.register_blueprint(passenger_bp)
+    app.register_blueprint(parcel_bp)
+    app.register_blueprint(station_bp)
+    
     
     return app

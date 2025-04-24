@@ -5,9 +5,11 @@ import requests
 from requests.auth import HTTPBasicAuth
 import base64
 
+from server.models.parcel import Parcel, generate_tracking_code
 from server.models.payment import Payment
 from server.models.paymentticket import PaymentTicket
 from server.models.schedule import Schedule
+from server.models.station import Station
 from server.models.ticket import Ticket
 from server.models.user import User
 from server import db
@@ -252,3 +254,89 @@ def generate_password(timestamp):
     lipa_na_mpesa_online_shortcode = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
     password_string = f"{business_shortcode}{lipa_na_mpesa_online_shortcode}{timestamp}"
     return base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
+
+# Function to get the list of booked tickets for a passenger
+@passenger_bp.route('/booked_tickets', methods=['GET'])
+@jwt_required()
+def get_booked_tickets():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if not current_user or current_user.role != 'passenger':
+        return jsonify({'message': 'Permission denied'}), 403
+
+    booked_tickets = Ticket.query.filter_by(passenger_id=current_user.id).all()
+
+    if not booked_tickets:
+        return jsonify({'message': 'No booked tickets found'}), 404
+
+    tickets_data = [ticket_to_dict(ticket) for ticket in booked_tickets]
+    return jsonify(tickets_data), 200
+
+
+@passenger_bp.route('/send_parcel', methods=['POST'])
+@jwt_required()
+def send_parcel():
+    data = request.get_json()
+    
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if not current_user or current_user.role != 'passenger':
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    try:
+        required_fields = [
+            'company_id', 'pickup_station_id', 'dropoff_station_id',
+            'sender_name', 'receiver_name', 'receiver_phone',
+            'weight', 'delivery_fee', 'payment_amount'
+        ]
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing field: {field}'}), 400
+
+        # Verify stations belong to the company
+        pickup_station = Station.query.filter_by(id=data['pickup_station_id'], company_id=data['company_id']).first()
+        dropoff_station = Station.query.filter_by(id=data['dropoff_station_id'], company_id=data['company_id']).first()
+
+        if not pickup_station or not dropoff_station:
+            return jsonify({'error': 'Invalid station selection for the chosen company'}), 400
+
+        # Create Parcel
+        new_parcel = Parcel(
+            tracking_code=generate_tracking_code(),
+            company_id=data['company_id'],
+            sender_id=current_user_id,
+            pickup_station_id=data['pickup_station_id'],
+            dropoff_station_id=data['dropoff_station_id'],
+            sender_name=data['sender_name'],
+            receiver_name=data['receiver_name'],
+            receiver_phone=data['receiver_phone'],
+            weight=data['weight'],
+            delivery_fee=data['delivery_fee'],
+            payment_amount=data['payment_amount'],
+            status='pending',
+            payment_status='pending'
+        )
+
+        db.session.add(new_parcel)
+        db.session.commit()
+
+        return jsonify({'message': 'Parcel sent successfully', 'parcel_id': new_parcel.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+@passenger_bp.route('/track/<tracking_code>', methods=['GET'])
+def track_parcel(tracking_code):
+    parcel = Parcel.query.filter_by(tracking_code=tracking_code).first()
+    if not parcel:
+        return jsonify({'error': 'Invalid tracking code'}), 404
+
+    return jsonify({
+        'status': parcel.status,
+        'pickup_station': parcel.pickup_station.name,
+        'dropoff_station': parcel.dropoff_station.name,
+        'is_delivered': parcel.is_delivered
+    })

@@ -11,8 +11,10 @@ def health_check():
     return jsonify({"status": "healthy", "database": "SQLite"})
 
 if __name__ == '__main__':
-    # Always use SocketIO for consistency
-    socketio.run(app, 
-                host='0.0.0.0', 
-                port=5000, 
-                debug=os.getenv('FLASK_ENV') == 'development')
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5000,
+        debug=True,
+        use_reloader=True  # 👈 Enables auto-reload
+    )
