@@ -18,6 +18,11 @@ import Schedules from './passenger/Schedules';
 import StationDashboard from './stationadmin/dashboard';
 import { StationAdminProvider } from './context/StationAdminContext';
 import BookingsPage from './passenger/dashboard';
+import CreateSchedule from './companyadmin/CreateSchedule';
+import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
+// import "leaflet-control-geocoder/dist/Control.Geocoder.css";
+// import "leaflet-control-geocoder/dist/Control.Geocoder.js";
 
 function App() {
   return (
@@ -44,6 +49,10 @@ function App() {
                         element={<CompanyDashboard />}
                       />
                       <Route
+                        path="/schedules"
+                        element={<CreateSchedule />}
+                      />
+                      <Route
                         path="/stationadmin/dashboard"
                         element={<StationDashboard />}
                       />
@@ -51,8 +60,7 @@ function App() {
                         path="/driver/dashboard"
                         element={<DriverDashboard />}
                       />
-                      {/* <Route path="/dashboard" element={<Schedules />} />{" "} */}
-                      <Route path="/dashboard" element={<BookingsPage />} />{" "}
+                      <Route path="/dashboard" element={<BookingsPage />} />
                     </Routes>
                   </div>
                   <ToastContainer
