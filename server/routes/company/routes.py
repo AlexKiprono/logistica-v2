@@ -5,11 +5,79 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from server.models.route import Route
 from server.models.schedule import Schedule
+from server.models.station import Station
 from server.models.user import User
 from server import db
 from . import company_bp
 
 # create routes
+# @company_bp.route('/company/routes', methods=['POST'])
+# @jwt_required()
+# def create_route():
+#     current_user_id = get_jwt_identity()
+#     current_user = User.query.get(current_user_id)
+
+#     if not current_user or current_user.role != 'companyadmin' or not current_user.company:
+#         return jsonify({'message': 'Permission denied or no company associated'}), 403
+
+#     data = request.get_json()
+
+#     departure_id = data.get('departure_id')
+#     arrival_id = data.get('arrival_id')
+#     distance = data.get('distance')
+
+#     if not all([departure_id, arrival_id, distance]):
+#         return jsonify({'message': 'Start location, end location, and distance are required'}), 400
+#     if departure_id == arrival_id:
+#         return jsonify({'message': 'Start and end locations cannot be the same'}), 400
+
+#     # Check if a route already exists in the direction A -> B
+#     existing_route = Route.query.filter_by(
+#         company_id=current_user.company_id,
+#         departure_id=departure_id,
+#         arrival_id=arrival_id
+#     ).first()
+
+#     if existing_route:
+#         return jsonify({'message': 'A route already exists from A to B'}), 400
+
+#     # If no route exists in the direction A -> B, check if the reverse route exists (B -> A)
+#     reverse_route = Route.query.filter_by(
+#         company_id=current_user.company_id,
+#         departure_id=arrival_id,
+#         arrival_id=departure_id
+#     ).first()
+
+#     if reverse_route:
+#         # If the reverse route exists (B -> A), allow creating A -> B
+#         route = Route(
+#             company_id=current_user.company_id,
+#             departure_id=departure_id,
+#             arrival_id=arrival_id,
+#             distance=distance
+#         )
+#         db.session.add(route)
+#         db.session.commit()
+#         return jsonify({
+#             'message': 'Route created successfully from A to B (inverse route exists)',
+#             'route_id': route.id
+#         }), 201
+
+#     # If no route exists, create the new route (A -> B)
+#     route = Route(
+#         company_id=current_user.company_id,
+#         departure_id=departure_id,
+#         arrival_id=arrival_id,
+#         distance=distance
+#     )
+#     db.session.add(route)
+#     db.session.commit()
+
+#     return jsonify({
+#         'message': 'Route created successfully from A to B',
+#         'route_id': route.id
+#     }), 201
+
 @company_bp.route('/company/routes', methods=['POST'])
 @jwt_required()
 def create_route():
@@ -20,7 +88,6 @@ def create_route():
         return jsonify({'message': 'Permission denied or no company associated'}), 403
 
     data = request.get_json()
-
     departure_id = data.get('departure_id')
     arrival_id = data.get('arrival_id')
     distance = data.get('distance')
@@ -38,31 +105,15 @@ def create_route():
     ).first()
 
     if existing_route:
-        return jsonify({'message': 'A route already exists from A to B'}), 400
+        return jsonify({'message': 'Route already exists'}), 400
 
-    # If no route exists in the direction A -> B, check if the reverse route exists (B -> A)
+    # Check reverse direction
     reverse_route = Route.query.filter_by(
         company_id=current_user.company_id,
         departure_id=arrival_id,
         arrival_id=departure_id
     ).first()
 
-    if reverse_route:
-        # If the reverse route exists (B -> A), allow creating A -> B
-        route = Route(
-            company_id=current_user.company_id,
-            departure_id=departure_id,
-            arrival_id=arrival_id,
-            distance=distance
-        )
-        db.session.add(route)
-        db.session.commit()
-        return jsonify({
-            'message': 'Route created successfully from A to B (inverse route exists)',
-            'route_id': route.id
-        }), 201
-
-    # If no route exists, create the new route (A -> B)
     route = Route(
         company_id=current_user.company_id,
         departure_id=departure_id,
@@ -70,10 +121,20 @@ def create_route():
         distance=distance
     )
     db.session.add(route)
+    db.session.flush()
+
+    # Automatically associate company's stations with this route
+    stations = Station.query.filter_by(company_id=current_user.company_id).all()
+    route.stations.extend(stations)
+
     db.session.commit()
 
+    msg = 'Route created successfully'
+    if reverse_route:
+        msg += ' from A to B (inverse route exists)'
+
     return jsonify({
-        'message': 'Route created successfully from A to B',
+        'message': msg,
         'route_id': route.id
     }), 201
 

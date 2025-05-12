@@ -42,6 +42,7 @@ def create_app(config_class=Config):
     from .models.payment import Payment
     from .models.paymentticket import PaymentTicket
     from .models.county import County
+    from .models.route_station import route_station
 
     # Import and register routes 
     from server.routes.auth import auth_bp

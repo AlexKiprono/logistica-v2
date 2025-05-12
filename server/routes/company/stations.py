@@ -109,11 +109,11 @@ def create_station_and_admin():
     }), 201
 
 # routes by station
+
 @company_bp.route('/station/routes', methods=['GET'])
 @jwt_required()
-def get_routes_and_schedules_for_station():
+def get_station_routes():
     current_user_id = get_jwt_identity()
-
     current_user = User.query.get(current_user_id)
 
     if current_user.role != 'stationadmin':
@@ -121,64 +121,89 @@ def get_routes_and_schedules_for_station():
 
     station = Station.query.filter_by(user_id=current_user.id).first()
     if not station:
-        return jsonify({'message': 'No station assigned to this user'}), 400
+        return jsonify({'message': 'No station assigned to this user'}), 404
 
-    county = station.county
+    routes = station.routes  # many-to-many relationship is already set up
 
-    routes = Route.query.filter(
-        (Route.departure_id == county.id) | (Route.arrival_id == county.id)
-    ).all()
-
-    # Prepare the result
     result = []
     for route in routes:
-        schedules = Schedule.query.filter_by(route_id=route.id).all()
-        
-        for schedule in schedules:
-            start_time_str = schedule.start_time.strftime("%H:%M:%S") if schedule.start_time else None
-            end_time_str = schedule.end_time.strftime("%H:%M:%S") if schedule.end_time else None
-
-
-            driver = Driver.query.get(schedule.driver_id)
-            driver_data = {
-                'id': driver.id,
-                'assigned_vehicle_id': driver.assigned_vehicle_id,
-                'vehicle_license_plate': driver.vehicle.license_plate, 
-                'first_name': driver.user.first_name,
-                'last_name': driver.user.last_name,
-                'email': driver.user.email
-            
-            } if driver else {}
-
-            date_str = schedule.date.strftime("%Y-%m-%d") if schedule.date else None
-
-
-            result.append({
-                'station_id': station.id,
-                'route': {
-                    'id': route.id,
-                    'departure': route.departure_county.name,
-                    'arrival': route.arrival_county.name,
-                    'distance': route.distance
-                },
-                'schedule': {
-                    'id': schedule.id,
-                    'date': date_str, 
-                    'start_time': start_time_str,
-                    'end_time': end_time_str,
-                    'ticket_price': schedule.ticket_price,
-                    'status': schedule.status
-                },
-                'driver': driver_data
-
-            })
+        result.append({
+            'route_id': route.id,
+            'departure': route.departure_county.name,
+            'arrival': route.arrival_county.name,
+            'distance': route.distance,
+            'company_id': route.company_id
+        })
 
     return jsonify(result), 200
+
+
+# @company_bp.route('/station/routes', methods=['GET'])
+# @jwt_required()
+# def get_routes_and_schedules_for_station():
+#     current_user_id = get_jwt_identity()
+
+#     current_user = User.query.get(current_user_id)
+
+#     if current_user.role != 'stationadmin':
+#         return jsonify({'message': 'Permission denied'}), 403
+
+#     station = Station.query.filter_by(user_id=current_user.id).first()
+#     if not station:
+#         return jsonify({'message': 'No station assigned to this user'}), 400
+
+#     county = station.county
+
+#     routes = Route.query.filter(
+#         (Route.departure_id == county.id) | (Route.arrival_id == county.id)
+#     ).all()
+
+#     # Prepare the result
+#     result = []
+#     for route in routes:
+#         schedules = Schedule.query.filter_by(route_id=route.id).all()
+        
+#         for schedule in schedules:
+#             start_time_str = schedule.start_time.strftime("%H:%M:%S") if schedule.start_time else None
+#             end_time_str = schedule.end_time.strftime("%H:%M:%S") if schedule.end_time else None
+
+
+#             driver = Driver.query.get(schedule.driver_id)
+#             driver_data = {
+#                 'id': driver.id,
+#                 'assigned_vehicle_id': driver.assigned_vehicle_id,
+#                 'vehicle_license_plate': driver.vehicle.license_plate, 
+#                 'first_name': driver.user.first_name,
+#                 'last_name': driver.user.last_name,
+#                 'email': driver.user.email
+            
+#             } if driver else {}
+
+#             date_str = schedule.date.strftime("%Y-%m-%d") if schedule.date else None
+#             result.append({
+#                 'station_id': station.id,
+#                 'route': {
+#                     'id': route.id,
+#                     'departure': route.departure_county.name,
+#                     'arrival': route.arrival_county.name,
+#                     'distance': route.distance
+#                 },
+#                 'schedule': {
+#                     'id': schedule.id,
+#                     'date': date_str, 
+#                     'start_time': start_time_str,
+#                     'end_time': end_time_str,
+#                     'ticket_price': schedule.ticket_price,
+#                     'status': schedule.status
+#                 },
+#                 'driver': driver_data
+#             })
+#     return jsonify(result), 200
 
 # get all stations
 @company_bp.route('/admin/company/stations', methods=['GET'])
 @jwt_required()
-def get_stations_and_admins():
+def get_stations_for_company():
     # Get the current user ID from JWT token
     current_user_id = get_jwt_identity()
 
@@ -189,21 +214,20 @@ def get_stations_and_admins():
     if current_user.role != 'companyadmin':
         return jsonify({'message': 'Permission denied'}), 403
 
-    # Check if the current user has a company associated
+    # Check if the current user is associated with a company
     if not current_user.company:
         return jsonify({'message': 'No company associated with this admin'}), 400
 
-    # Fetch all stations for the current user's company
+    # Fetch all stations associated with the user's company
     stations = Station.query.filter_by(company_id=current_user.company_id).all()
 
-    # List to store the result
+    # Prepare the response
     result = []
-
     for station in stations:
-        # Fetch the admin user directly via the user_id column (one-to-one relationship)
-        admin = User.query.get(station.user_id) if station.user_id else None
-        
-        # Prepare the admin details if an admin exists
+        # Fetch the admin for the station using the admin property
+        admin = station.admin  # This uses the @property method in Station model
+
+        # Prepare the admin details if available
         admin_data = {}
         if admin:
             admin_data = {
@@ -214,7 +238,7 @@ def get_stations_and_admins():
                 'phone_number': admin.phone_number
             }
 
-        # Prepare the station details
+        # Add the station and admin details to the result
         result.append({
             'station': {
                 'id': station.id,
@@ -228,7 +252,9 @@ def get_stations_and_admins():
 
     return jsonify(result), 200
 
-# Update station details (for companyadmin)
+
+
+
 @company_bp.route('/company/station/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_station(id):

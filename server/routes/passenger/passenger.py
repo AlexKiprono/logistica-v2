@@ -274,69 +274,69 @@ def get_booked_tickets():
     return jsonify(tickets_data), 200
 
 
-@passenger_bp.route('/send_parcel', methods=['POST'])
-@jwt_required()
-def send_parcel():
-    data = request.get_json()
+# @passenger_bp.route('/send_parcel', methods=['POST'])
+# @jwt_required()
+# def send_parcel():
+#     data = request.get_json()
     
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+#     current_user_id = get_jwt_identity()
+#     current_user = User.query.get(current_user_id)
     
-    if not current_user or current_user.role != 'passenger':
-        return jsonify({'error': 'Unauthorized access'}), 403
+#     if not current_user or current_user.role != 'passenger':
+#         return jsonify({'error': 'Unauthorized access'}), 403
 
-    try:
-        required_fields = [
-            'company_id', 'pickup_station_id', 'dropoff_station_id',
-            'sender_name', 'receiver_name', 'receiver_phone',
-            'weight', 'delivery_fee', 'payment_amount'
-        ]
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'Missing field: {field}'}), 400
+#     try:
+#         required_fields = [
+#             'company_id', 'pickup_station_id', 'dropoff_station_id',
+#             'sender_name', 'receiver_name', 'receiver_phone',
+#             'weight', 'delivery_fee', 'payment_amount'
+#         ]
+#         for field in required_fields:
+#             if field not in data:
+#                 return jsonify({'error': f'Missing field: {field}'}), 400
 
-        # Verify stations belong to the company
-        pickup_station = Station.query.filter_by(id=data['pickup_station_id'], company_id=data['company_id']).first()
-        dropoff_station = Station.query.filter_by(id=data['dropoff_station_id'], company_id=data['company_id']).first()
+#         # Verify stations belong to the company
+#         pickup_station = Station.query.filter_by(id=data['pickup_station_id'], company_id=data['company_id']).first()
+#         dropoff_station = Station.query.filter_by(id=data['dropoff_station_id'], company_id=data['company_id']).first()
 
-        if not pickup_station or not dropoff_station:
-            return jsonify({'error': 'Invalid station selection for the chosen company'}), 400
+#         if not pickup_station or not dropoff_station:
+#             return jsonify({'error': 'Invalid station selection for the chosen company'}), 400
 
-        # Create Parcel
-        new_parcel = Parcel(
-            tracking_code=generate_tracking_code(),
-            company_id=data['company_id'],
-            sender_id=current_user_id,
-            pickup_station_id=data['pickup_station_id'],
-            dropoff_station_id=data['dropoff_station_id'],
-            sender_name=data['sender_name'],
-            receiver_name=data['receiver_name'],
-            receiver_phone=data['receiver_phone'],
-            weight=data['weight'],
-            delivery_fee=data['delivery_fee'],
-            payment_amount=data['payment_amount'],
-            status='pending',
-            payment_status='pending'
-        )
+#         # Create Parcel
+#         new_parcel = Parcel(
+#             tracking_code=generate_tracking_code(),
+#             company_id=data['company_id'],
+#             sender_id=current_user_id,
+#             pickup_station_id=data['pickup_station_id'],
+#             dropoff_station_id=data['dropoff_station_id'],
+#             sender_name=data['sender_name'],
+#             receiver_name=data['receiver_name'],
+#             receiver_phone=data['receiver_phone'],
+#             weight=data['weight'],
+#             delivery_fee=data['delivery_fee'],
+#             payment_amount=data['payment_amount'],
+#             status='pending',
+#             payment_status='pending'
+#         )
 
-        db.session.add(new_parcel)
-        db.session.commit()
+#         db.session.add(new_parcel)
+#         db.session.commit()
 
-        return jsonify({'message': 'Parcel sent successfully', 'parcel_id': new_parcel.id}), 201
+#         return jsonify({'message': 'Parcel sent successfully', 'parcel_id': new_parcel.id}), 201
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'error': str(e)}), 500
     
-@passenger_bp.route('/track/<tracking_code>', methods=['GET'])
-def track_parcel(tracking_code):
-    parcel = Parcel.query.filter_by(tracking_code=tracking_code).first()
-    if not parcel:
-        return jsonify({'error': 'Invalid tracking code'}), 404
+# @passenger_bp.route('/track/<tracking_code>', methods=['GET'])
+# def track_parcel(tracking_code):
+#     parcel = Parcel.query.filter_by(tracking_code=tracking_code).first()
+#     if not parcel:
+#         return jsonify({'error': 'Invalid tracking code'}), 404
 
-    return jsonify({
-        'status': parcel.status,
-        'pickup_station': parcel.pickup_station.name,
-        'dropoff_station': parcel.dropoff_station.name,
-        'is_delivered': parcel.is_delivered
-    })
+#     return jsonify({
+#         'status': parcel.status,
+#         'pickup_station': parcel.pickup_station.name,
+#         'dropoff_station': parcel.dropoff_station.name,
+#         'is_delivered': parcel.is_delivered
+#     })

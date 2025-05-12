@@ -136,6 +136,40 @@ export const PassengerProvider = ({ children }) => {
     }
   };
 
+const SendParcel = async (parcelData, token) => {
+  try {
+    const response = await fetch(`${server_url}/send_parcel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(parcelData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        data.error || "An error occurred while sending the parcel.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } else {
+      setSuccessMessage(data.message);
+      toast.success(data.message);
+      return data;
+    }
+  } catch (error) {
+    setError("Network error. Please try again later.");
+    toast.error("Network error. Please try again later.");
+    return null;
+  }
+};
+
+  
+
+
   const contextData = {
     fetchAllSchedules,
     setAllSchedules,
@@ -146,6 +180,7 @@ export const PassengerProvider = ({ children }) => {
     successMessage,
     bookTicket,
     initiateMpesaPayment,
+    SendParcel,
   };
 
   return (

@@ -1,8 +1,8 @@
-"""initial
+"""empty message
 
-Revision ID: 016adf2285e5
+Revision ID: eaa551cdad98
 Revises: 
-Create Date: 2025-04-23 12:48:09.995348
+Create Date: 2025-05-06 00:22:04.348559
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '016adf2285e5'
+revision = 'eaa551cdad98'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,6 +34,8 @@ def upgrade():
     op.create_table('county',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('lat', sa.Float(), nullable=False),
+    sa.Column('lng', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
@@ -160,13 +162,13 @@ def upgrade():
     sa.Column('sender_name', sa.String(length=100), nullable=False),
     sa.Column('receiver_name', sa.String(length=100), nullable=False),
     sa.Column('receiver_phone', sa.String(length=15), nullable=False),
-    sa.Column('weight', sa.Float(), nullable=False),
-    sa.Column('delivery_fee', sa.Float(), nullable=False),
+    sa.Column('weight', sa.Float(), nullable=True),
+    sa.Column('delivery_fee', sa.Float(), nullable=True),
     sa.Column('is_published', sa.Boolean(), nullable=True),
     sa.Column('is_delivered', sa.Boolean(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=True),
     sa.Column('payment_status', sa.String(length=50), nullable=True),
-    sa.Column('payment_amount', sa.Float(), nullable=False),
+    sa.Column('payment_amount', sa.Float(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
@@ -177,10 +179,11 @@ def upgrade():
     sa.UniqueConstraint('tracking_code')
     )
     op.create_table('route_station',
-    sa.Column('route_id', sa.Integer(), nullable=True),
-    sa.Column('station_id', sa.Integer(), nullable=True),
+    sa.Column('route_id', sa.Integer(), nullable=False),
+    sa.Column('station_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['route_id'], ['route.id'], ),
-    sa.ForeignKeyConstraint(['station_id'], ['station.id'], )
+    sa.ForeignKeyConstraint(['station_id'], ['station.id'], ),
+    sa.PrimaryKeyConstraint('route_id', 'station_id')
     )
     op.create_table('schedule',
     sa.Column('id', sa.Integer(), nullable=False),

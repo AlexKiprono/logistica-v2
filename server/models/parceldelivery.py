@@ -13,8 +13,5 @@ class ParcelDelivery(db.Model):
     # Relationships
     vehicle = db.relationship("Vehicle", back_populates="parcel_deliveries")
     parcel = db.relationship('Parcel', backref='deliveries')
-    
-route_station = db.Table('route_station',
-    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
-    db.Column('station_id', db.Integer, db.ForeignKey('station.id'))
-)
+
+

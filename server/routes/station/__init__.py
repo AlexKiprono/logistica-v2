@@ -5,4 +5,4 @@ from flask import Blueprint
 station_bp = Blueprint('station_bp', __name__)
 
 # Import routes
-from server.routes.station import station
+from server.routes.station import station,parcel

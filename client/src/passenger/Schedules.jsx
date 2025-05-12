@@ -36,7 +36,7 @@ function Schedules() {
 
   useEffect(() => {
     fetchUserData();
-  }, [fetchUserData]);
+  }, []);
 
   useEffect(() => {
     fetchAllSchedules();

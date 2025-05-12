@@ -17,6 +17,7 @@ import { DriverProvider } from './context/DriverContext';
 import Schedules from './passenger/Schedules';
 import StationDashboard from './stationadmin/dashboard';
 import { StationAdminProvider } from './context/StationAdminContext';
+import { ParcelProvider } from './context/ParcelContext';
 import BookingsPage from './passenger/dashboard';
 import CreateSchedule from './companyadmin/CreateSchedule';
 import "leaflet/dist/leaflet.css";
@@ -32,7 +33,8 @@ function App() {
           <StationAdminProvider>
             <DriverProvider>
               <PassengerProvider>
-                <BrowserRouter>
+                <ParcelProvider>
+                  <BrowserRouter>
                   <div>
                     <WebSocketComponent />
                     <Routes>
@@ -69,6 +71,8 @@ function App() {
                     hideProgressBar={true}
                   />
                 </BrowserRouter>
+                </ParcelProvider>
+
               </PassengerProvider>
             </DriverProvider>
           </StationAdminProvider>
